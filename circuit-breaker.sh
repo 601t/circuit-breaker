@@ -19,9 +19,8 @@ BREAKER() {
 }
 
 while [[ -n $(ps -a | grep "$PROCESS") ]]; do
-    sleep 0.025
+    sleep 5
     ((COUNT += 1))
-    echo $COUNT
     if [[ $COUNT -le 240 ]]; then
 	BREAKER
 	if [[ $COUNT -lt 3 ]]; then
