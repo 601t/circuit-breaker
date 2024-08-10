@@ -1,5 +1,5 @@
 #!/bin/bash
-PROCESS=python
+PROCESS=prterun
 CPU_Temp() {
     echo "$(sensors | grep Tctl | sed s/Tctl/CPU/g)"
 }
@@ -18,7 +18,7 @@ BREAKER() {
     fi
 }
 
-while [[ -n $(ps -a | grep "$PROCESS") ]]; do
+while [[ -n $(ps x | grep -v "grep" | grep -e "$PROCESS") ]]; do
     sleep 5
     ((COUNT += 1))
     if [[ $COUNT -le 240 ]]; then
@@ -44,3 +44,8 @@ while [[ -n $(ps -a | grep "$PROCESS") ]]; do
 	fi
     fi
 done
+
+if [[ -z $(ps x | grep -v "grep" | grep -e "$PROCESS") ]]; then
+    echo "$(ps x -o command | grep $PROCESS) ended."
+fi
+
