@@ -36,7 +36,7 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 	case $COUNT in
 	    0)
 		echo "The process to be monitored is"
-		echo "$(printf "\t")\"$ESC[31m$COMMAND$ESC[m\"."
+		echo "$(printf "\t")\"$ESC[31m$(ps x -o command | grep -v "grep" | grep -e "$PROCESS" | awk "NR==1 {print}")$ESC[m\"."
 		echo "Check CPU temperature every 5 seconds."
 		;;
 	    *)
