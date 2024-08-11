@@ -25,9 +25,9 @@ Show_Time() {
 }
 BREAKER() {
     if [[ -n $(sensors | grep Tctl | grep -e "+[1][0][2-9].[0-9]" -e "+[1][1][0-9].[0-9]") ]]; then
-	echo "Overheat! ($ESC[31m$(sensors | grep Tctl | awk '{print $2}')$ESC[m)"
+	echo "Overheat! (${ESC}[31m$(sensors | grep Tctl | awk '{print $2}')${ESC}[m)"
 	echo "Killing $(ps x -o command | grep -v "grep" | grep $PROCESS | awk 'NR==1 {print}')..."
-	kill -9 $(echo $PID)
+	kill -9 $(echo ${PID})
     fi
 }
 
@@ -36,7 +36,7 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 	case $COUNT in
 	    0)
 		echo "The process to be monitored is"
-		echo "$(printf "\t")\"$ESC[31m$(ps x -o command | grep -v "grep" | grep -e "$PROCESS" | awk "NR==1 {print}")$ESC[m\"."
+		echo "$(printf "\t")\"${ESC}[31m${COMMAND}${ESC}[m\"."
 		echo "Check CPU temperature every 5 seconds."
 		;;
 	    *)
@@ -55,13 +55,6 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 			case $(($COUNT % 60)) in
 			    0)
 				echo "$(($COUNT/12)) minutes"
-				case $COUNT in
-				    240)
-					echo "From now on, check CPU temperature once every 10 minutes."
-					;;
-				    *)
-					;;
-				esac
 				;;
 			    *)
 				;;
@@ -69,9 +62,9 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 		esac
 	    fi
 	else
+	    BREAKER
 	    case $(($COUNT % 120)) in
 		0)
-		    BREAKER
 		    CPU_Temp
 		    case $(($COUNT % 360)) in
 			0)
@@ -87,7 +80,7 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 	fi
     done
     echo "Process"
-    echo "$(printf "\t")\"$ESC[31m$COMMAND$ESC[m\""
+    echo "$(printf "\t")\"${ESC}[31m${COMMAND}${ESC}[m\""
     echo "$(printf "\t\t")is finished."
 else  
     echo "The specified process has ended or has not started."
