@@ -54,7 +54,7 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 			CPU_Temp
 			case $(($COUNT % 60)) in
 			    0)
-				echo "$(($COUNT/12)) minutes"
+				Show_Time
 				;;
 			    *)
 				;;
