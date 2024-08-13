@@ -13,16 +13,6 @@ CPU_Temp() {
 	    ;;
     esac
 }
-Show_Time() {
-    case $COUNT in
-	360)
-	    echo "$(($COUNT/12)) minutes"
-	    ;;
-	*)
-	    echo "$(($COUNT/720)) hours $(($COUNT%720/12)) minutes"
-	    ;;
-    esac
-}
 BREAKER() {
     if [[ -n $(sensors | grep Tctl | grep -e "+[1][0][2-9].[0-9]" -e "+[1][1][0-9].[0-9]") ]]; then
 	echo "Overheat! (${ESC}[31m$(sensors | grep Tctl | awk '{print $2}')${ESC}[m)"
@@ -54,7 +44,7 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 			CPU_Temp
 			case $(($COUNT % 60)) in
 			    0)
-				Show_Time
+				echo "$(($COUNT/12)) minutes"
 				;;
 			    *)
 				;;
@@ -68,11 +58,17 @@ if [[ -n $(ps x -o command | grep -v "grep" | grep $PROCESS) ]]; then
 		    CPU_Temp
 		    case $(($COUNT % 360)) in
 			0)
-			    Show_Time
-			    ;;
+			    case $(($COUNT / 360)) in
+				1)
+				    echo "$(($COUNT/12)) minutes"
+				    ;;
+				*)
+				    echo "$(($COUNT/720)) hours $(($COUNT%720/12)) minutes"
+				    ;;
+			    esac
 			*)
 			    ;;
-		    esac
+			  esac
 		    ;;
 		*)
 		    ;;
