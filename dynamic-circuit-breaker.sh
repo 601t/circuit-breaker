@@ -1,5 +1,5 @@
 #!/bin/bash
-PROCESS="prterun"
+PROCESS="prterun" # Arbitrary name
 ESC=$(printf "\033")
 TAB=$(printf "\t")
 SCAN_PROCESS_W_PID() {
