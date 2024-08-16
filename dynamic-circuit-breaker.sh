@@ -1,25 +1,24 @@
-#!/bin/bash
-PROCESS="prterun" # Arbitrary name
-ESC=$(printf "\033")
-TAB=$(printf "\t")
+#!/usr/bin/env bash
+PROCESS="$*"
+EXCLUDE="$0 $*"
 SCAN_PROCESS_W_PID() {
-    ps x -o pid,command | grep -v "grep" | grep -e "${PROCESS}"
+    ps x -o pid,command | grep -v "grep" | grep -v "${EXCLUDE}" | grep -e "${PROCESS}"
 }
 SCAN_POST() {
     case $(PROCESS_NUM) in
 	0)
 	    ;;
 	*)		
-	    POST_PROCESS_NUM=$(ps x -o command | grep -v "grep" | grep -e "${PROCESS}" | wc -l)
-	    POST_COMMAND_W_PID=$(ps x -o pid,command | grep -v "grep" | grep -e "${PROCESS}")
+	    POST_PROCESS_NUM=$(ps x -o command | grep -v "grep" | grep -v "${EXCLUDE}" | grep -e "${PROCESS}" | wc -l)
+	    POST_COMMAND_W_PID=$(ps x -o pid,command | grep -v "grep" | grep -v "${EXCLUDE}" | grep -e "${PROCESS}")
 	    ;;
     esac
 }
 PROCESS_NUM() {
-    ps x -o command | grep -v "grep" | grep -e "${PROCESS}" | wc -l
+    ps x -o command | grep -v "grep" | grep -v "${EXCLUDE}" | grep -e "${PROCESS}" | wc -l
 }
 SCAN_PID() {
-    echo "$(ps x -o pid,command | grep -v "grep" | grep -e "${PROCESS}" | awk '{printf "%d ", $1}')"
+    echo "$(ps x -o pid,command | grep -v "grep" | grep -v "${EXCLUDE}" | grep -e "${PROCESS}" | awk '{printf "%d ", $1}')"
 }
 DIFF_PROCESS_BEFORE() {
     diff <(echo "${COMMAND_W_PID}") <(echo "${POST_COMMAND_W_PID}") | grep -e "<"
@@ -179,110 +178,116 @@ BREAKER() {
 
 ###---------------SCRIPT_START---------------###
 
-if [[ -n $(SCAN_PROCESS_W_PID) ]]; then
-    COMMAND_W_PID=$(SCAN_PROCESS_W_PID)
-    PRE_PROCESS_NUM=$(PROCESS_NUM)
-    COUNT=0
-    echo "This script is dynamic."
-    echo "Please specify your process carefully."
-    echo "I accept no responsibility for any losses caused by this script."
-    while [[ -n $(SCAN_PROCESS_W_PID) ]]; do
-	case $COUNT in
-	    0)
-		case ${PRE_PROCESS_NUM} in
-		    1)
-			echo "The monitored process is"
-			;;
-		    *)
-			echo "The monitored processes are"
-			;;
-		esac
-		PRE_COMMAND_OUT
-		echo "Monitoring start..."
-		echo "Check CPU temperature every 5 seconds."
-		;;
-	    *)
-		;;
-	esac
-	SCAN_POST
-	sleep 5
-	((COUNT += 1))
-	SCAN_POST
-	if [[ $COUNT -le 240 ]]; then
-	    BREAKER
-	    case $(PROCESS_NUM) in
+main() {
+    ESC=$(printf "\033")
+    TAB=$(printf "\t")
+    if [[ -n $(SCAN_PROCESS_W_PID) && -n ${PROCESS} ]]; then
+	COMMAND_W_PID=$(SCAN_PROCESS_W_PID)
+	PRE_PROCESS_NUM=$(PROCESS_NUM)
+	COUNT=0
+	echo "This script is dynamic."
+	echo "Please specify your process carefully."
+	echo "I accept no responsibility for any losses caused by this script."
+	while [[ -n $(SCAN_PROCESS_W_PID) ]]; do
+	    case $COUNT in
 		0)
+		    case ${PRE_PROCESS_NUM} in
+			1)
+			    echo "The monitored process is"
+			    ;;
+			*)
+			    echo "The monitored processes are"
+			    ;;
+		    esac
+		    PRE_COMMAND_OUT
+		    echo "Monitoring start..."
+		    echo "Check CPU temperature every 5 seconds."
 		    ;;
 		*)
-		    if [[ $COUNT -lt 3 ]]; then
-			CPU_TEMP
-		    else
-			case $(($COUNT % 3)) in
+		    ;;
+	    esac
+	    SCAN_POST
+	    sleep 5
+	    ((COUNT += 1))
+	    SCAN_POST
+	    if [[ $COUNT -le 240 ]]; then
+		BREAKER
+		case $(PROCESS_NUM) in
+		    0)
+		        ;;
+		    *)
+			if [[ $COUNT -lt 3 ]]; then
+			    CPU_TEMP
+			else
+			    case $(($COUNT % 3)) in
+				0)
+				    CPU_TEMP
+				    case $(($COUNT % 60)) in
+					0)
+					    echo "$(($COUNT/12)) minutes"
+					    ;;
+					*)
+					    ;;
+				    esac
+			    esac
+			fi
+			;;
+		esac
+	    else
+		BREAKER
+		case $(PROCESS_NUM) in
+		    0)
+		        ;;
+		    *)
+			case $(($COUNT % 120)) in
 			    0)
 				CPU_TEMP
-				case $(($COUNT % 60)) in
+				case $(($COUNT % 360)) in
 				    0)
-					echo "$(($COUNT/12)) minutes"
+					case $(($COUNT / 360)) in
+					    1)
+						echo "$(($COUNT/12)) minutes"
+						;;
+					    *)
+						echo "$(($COUNT/720)) hours $(($COUNT%720/12)) minutes"
+						;;
+					esac
 					;;
 				    *)
 					;;
 				esac
+				;;
+			    *)
+				;;
 			esac
-		    fi
-		    ;;
-	    esac
-	else
-	    BREAKER
-	    case $(PROCESS_NUM) in
-		0)
-		    ;;
-		*)
-		    case $(($COUNT % 120)) in
-			0)
-			    CPU_TEMP
-			    case $(($COUNT % 360)) in
-				0)
-				    case $(($COUNT / 360)) in
-					1)
-					    echo "$(($COUNT/12)) minutes"
-					    ;;
-					*)
-					    echo "$(($COUNT/720)) hours $(($COUNT%720/12)) minutes"
-					    ;;
-				    esac
-				    ;;
-				*)
-				    ;;
-			    esac
-			    ;;
-			*)
-			    ;;
-		    esac
-		    ;;
-	    esac
-	fi
-    done
-    case ${POST_PROCESS_NUM} in
-	1)	    
-	    echo "The following process"
-	    ;;
-	*)
-	    echo "The following processes"
-	    ;;
-    esac
-    POST_COMMAND_OUT
-    case ${POST_PROCESS_NUM} in
-	1)
-	    echo "${TAB}${TAB} has been terminated."
-	    ;;
-	*)
-	    echo "${TAB}${TAB} have been terminated."
-	    ;;
-    esac
-    POST_PROCESS
-else  
-    echo "The process or processes containing the specified"
-    echo "${TAB}\"${PROCESS}\""
-    echo "${TAB}${TAB}have already been terminated or have not started yet."
-fi
-echo "Exiting..."
+			;;
+		esac
+	    fi
+	done
+	case ${POST_PROCESS_NUM} in
+	    1)	    
+		echo "The following process"
+		;;
+	    *)
+		echo "The following processes"
+		;;
+	esac
+	POST_COMMAND_OUT
+	case ${POST_PROCESS_NUM} in
+	    1)
+		echo "${TAB}${TAB} has been terminated."
+		;;
+	    *)
+		echo "${TAB}${TAB} have been terminated."
+		;;
+	esac
+	POST_PROCESS
+    else  
+	echo "The process or processes containing the specified"
+	echo "${TAB}\"${PROCESS}\""
+	echo "${TAB}${TAB}have already been terminated or have not started yet."
+    fi
+    echo "Exiting..."
+}
+
+main
