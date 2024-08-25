@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 PROCESS="$*"
 EXCLUDE="$0 $*"
 SCAN_PROCESS_W_PID() {
